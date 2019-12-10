@@ -1,0 +1,49 @@
+# Default values for ember.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  api:
+    registry: gcr.io
+    repository: ember-159719/ember-api
+    tag: "latest"
+  engine:
+    registry: gcr.io
+    repository: ember-159719/ember-engine
+    tag: "latest"
+  ui:
+    registry: gcr.io
+    repository: ember-159719/ember-ui
+    tag: "latest"
+  kubeutil:
+    registry: gcr.io
+    repository: ember-159719/kubeutil
+    tag: 0.3
+
+emberApiPort: 9876
+emberApiRequestMemory: 16Gi
+emberApiRequestCpu: 4
+mongoUserName: root
+mongoUserPassword: rootPass
+emberEngineRequestMemory: 16Gi
+emberEngineRequestCpu: 4
+ifExternal: "false"
+
+service:
+  type: "LoadBalancer"
+
+ingress:
+  enabled: false
+
+elastic-stack:
+  elasticsearch:
+    cluster:
+      config:
+        http:
+          cors:
+            enabled: true
+            allow-credentials: true
+            allow-origin: "*"
+            allow-headers: "*"
+
+

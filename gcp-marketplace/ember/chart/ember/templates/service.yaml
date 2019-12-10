@@ -1,0 +1,154 @@
+# Mongo service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-mongo-service"
+  labels:
+    name: "{{ .Release.Name }}-mongo-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "mongo"
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    app: "{{ .Release.Name }}-mongo"
+
+---
+# Elasticsearch service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-elasticsearch-service"
+  labels:
+    service: "{{ .Release.Name }}-elasticsearch-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "elasticsearch"
+  annotations:
+    cloud.google.com/load-balancer-type: {{ .Values.loadBalancerType | default "Internal"  }}
+spec:
+  ports:
+    - name: elasticsearch-port
+      port: 80
+      targetPort: 9200
+  selector:
+    app: elasticsearch
+  type: LoadBalancer
+---
+# Kibana service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-kibana-service"
+  labels:
+    service: "{{ .Release.Name }}-kibana-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "kibana"
+  annotations:
+    cloud.google.com/load-balancer-type: {{ .Values.loadBalancerType | default "Internal" }}
+spec:
+  ports:
+    - name: kibana-port
+      port: 80
+      targetPort: 5601
+  selector:
+    app: kibana
+  type: LoadBalancer
+
+---
+# Ember api service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-ember-api-service"
+  labels:
+    service: "{{ .Release.Name }}-ember-api-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-api"
+  annotations:
+    cloud.google.com/load-balancer-type: {{ .Values.loadBalancerType | default "Internal" }}
+spec:
+  ports:
+    - name: ember-api-port
+      port: 9876
+      targetPort: 9876
+  selector:
+    app: "{{ .Release.Name }}-ember-api"
+  sessionAffinity: "ClientIP"
+  type: LoadBalancer
+---
+# Ember engine service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-ember-engine-service"
+  labels:
+    service: "{{ .Release.Name }}-ember-engine-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-engine"
+spec:
+  ports:
+    - name: ember-engine-port
+      port: 12345
+      targetPort: 12345
+  selector:
+    app: "{{ .Release.Name }}-ember-engine"
+---
+# Ember ui service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-ember-ui-service"
+  labels:
+    service: "{{ .Release.Name }}-ember-ui-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-ui"
+  annotations:
+    cloud.google.com/load-balancer-type: {{ .Values.loadBalancerType | default "Internal" }}
+spec:
+  ports:
+    - name: ember-ui-port
+      port: 80
+      targetPort: 80
+  selector:
+    app: "{{ .Release.Name }}-ember-ui"
+  type: LoadBalancer
+
+---
+#Ember API external service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-ember-api-external-service"
+  labels:
+    service: "{{ .Release.Name }}-ember-api-external-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-api"
+spec:
+  ports:
+    - name: ember-api-external-port
+      port: 9876
+      targetPort: 9876
+  selector:
+    app: "{{ .Release.Name }}-ember-api"
+  sessionAffinity: "ClientIP"
+  type: LoadBalancer
+---
+
+# Ember ui external service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-ember-ui-external-service"
+  labels:
+    service: "{{ .Release.Name }}-ember-ui-external-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-ui"
+spec:
+  ports:
+    - name: ember-ui-external-port
+      port: 80
+      targetPort: 80
+  selector:
+    app: "{{ .Release.Name }}-ember-ui"
+  type: LoadBalancer

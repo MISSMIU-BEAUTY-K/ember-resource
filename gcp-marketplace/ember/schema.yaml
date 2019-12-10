@@ -1,0 +1,81 @@
+applicationApiVersion: v1beta1
+
+properties:
+  name:
+    type: string
+    x-google-marketplace:
+      type: NAME
+  namespace:
+    type: string
+    x-google-marketplace:
+      type: NAMESPACE
+  serviceAccount:
+    type: string
+    x-google-marketplace:
+      type: SERVICE_ACCOUNT
+      serviceAccount:
+        roles:
+        - type: ClusterRole
+          rulesType: PREDEFINED
+          rulesFromRoleName: cluster-admin
+  version:
+    type: string
+    default: $TAG
+  apiImage:
+    type: string
+    default: $REGISTRY:$TAG
+    x-google-marketplace:
+      type: IMAGE
+      image:
+        generatedProperties:
+          splitToRegistryRepoTag:
+            registry: image.api.registry
+            repo: image.api.repository
+            tag: image.api.tag
+  engineImage:
+    type: string
+    default: $REGISTRY/ember-engine:$TAG
+    x-google-marketplace:
+      type: IMAGE
+      image:
+        generatedProperties:
+          splitToRegistryRepoTag:
+            registry: image.engine.registry
+            repo: image.engine.repository
+            tag: image.engine.tag
+  uiImage:
+    type: string
+    default: $REGISTRY/ember-ui:$TAG
+    x-google-marketplace:
+      type: IMAGE
+      image:
+        generatedProperties:
+          splitToRegistryRepoTag:
+            registry: image.ui.registry
+            repo: image.ui.repository
+            tag: image.ui.tag
+  kubeutilImage:
+    type: string
+    default: $REGISTRY/kubeutil:$TAG
+    x-google-marketplace:
+      type: IMAGE
+      image:
+        generatedProperties:
+          splitToRegistryRepoTag:
+            registry: image.kubeutil.registry
+            repo: image.kubeutil.repository
+            tag: image.kubeutil.tag
+  mongoUserName:
+    type: string
+    default: "root"
+  mongoUserPassword:
+    type: string
+    default: "rootPass"
+  ifExternal:
+    type: string
+    default: "true"
+
+required:
+  - name
+  - namespace
+  - serviceAccount

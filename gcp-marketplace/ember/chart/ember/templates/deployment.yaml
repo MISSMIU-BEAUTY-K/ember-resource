@@ -1,0 +1,233 @@
+#Ember-api
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-ember-api"
+  labels:
+    app: "{{ .Release.Name }}-ember-api"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-api"
+  annotations:
+    configmap.reloader.stakater.com/reload: "{{ .Release.Name }}-ember-configmap"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-ember-api"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-ember-api"
+        app.kubernetes.io/name: "{{ .Release.Name }}"
+        app.kubernetes.io/component: "ember-api"
+    spec:
+      containers:
+        - name: "{{ .Release.Name }}-ember-api"
+          image: "{{ .Values.image.api.registry }}/{{ .Values.image.api.repository }}:{{ .Values.image.api.tag }}"
+          ports:
+            - containerPort: 9876
+          resources:
+            requests:
+              memory: "{{ .Values.emberApiRequestMemory }}"
+              cpu: "{{ .Values.emberApiRequestCpu }}"
+          env:
+            - name: EMBER_MONGO_SOURCE
+              value: external
+            - name: EMBER_MONGO_URI
+              value: "mongodb://{{ .Values.mongoUserName }}:{{ .Values.mongoUserPassword }}@{{ .Release.Name }}-mongo-service/admin"
+            - name: EMBER_MONGO_PORT
+              value: "27017"
+            - name: EMBER_ENGINE_URL
+              value: "http://{{ .Release.Name }}-ember-engine-service:12345/rest/"
+            - name: EMBER_API_DEFAULT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: EMBER_API_DEFAULT_HOST
+            - name: EMBER_API_DEFAULT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: EMBER_API_DEFAULT_PORT
+            - name: ELASTICSEARCH_DEFAULT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: ELASTICSEARCH_DEFAULT_HOST
+            - name: ELASTICSEARCH_DEFAULT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: ELASTICSEARCH_DEFAULT_PORT
+            - name: KIBANA_DEFAULT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: KIBANA_DEFAULT_HOST
+            - name: KIBANA_DEFAULT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: KIBANA_DEFAULT_PORT
+          readinessProbe:
+            httpGet:
+              path: /hello
+              scheme: HTTP
+              port: 9876
+---
+#Ember-engine
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-ember-engine"
+  labels:
+    app: "{{ .Release.Name }}-ember-engine"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-engine"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-ember-engine"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-ember-engine"
+        app.kubernetes.io/name: "{{ .Release.Name }}"
+    spec:
+      containers:
+        - name: "{{ .Release.Name }}-ember-engine"
+          image: "{{ .Values.image.engine.registry }}/{{ .Values.image.engine.repository }}:{{ .Values.image.engine.tag }}"
+          ports:
+            - containerPort: 12345
+          resources:
+            requests:
+              memory: "{{ .Values.emberEngineRequestMemory }}"
+              cpu: "{{ .Values.emberEngineRequestCpu }}"
+          env:
+            - name: EMBER_MONGO_URI
+              value: "mongodb://{{ .Values.mongoUserName }}:{{ .Values.mongoUserPassword }}@{{ .Release.Name }}-mongo-service/admin"
+            - name: EMBER_MONGO_PORT
+              value: "27017"
+          readinessProbe:
+            httpGet:
+              path: /rest/hello
+              scheme: HTTP
+              port: 12345
+---
+#Mongo
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ .Release.Name }}-mongo"
+  labels:
+    app: "{{ .Release.Name }}-mongo"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "mongo"
+spec:
+  serviceName: "{{ .Release.Name }}-mongo"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-mongo"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-mongo"
+        app.kubernetes.io/name: "{{ .Release.Name }}"
+    spec:
+      volumes:
+        - name: "{{ .Release.Name }}-mongo-create-user"
+          configMap:
+            name: "{{ .Release.Name }}-mongo-create-user"
+            defaultMode: 0777
+      containers:
+        - name: mongo
+          image: launcher.gcr.io/google/mongodb3
+          args: ["--bind_ip_all", "--auth"]
+          ports:
+            - containerPort: 27017
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: 1
+            limits:
+              memory: 4Gi
+              cpu: 2
+          volumeMounts:
+            - name: {{ .Release.Name }}-mongo-persistent-storage
+              mountPath: /data/db
+            - name: {{ .Release.Name }}-mongo-create-user
+              mountPath: /mongo-create-user.sh
+              subPath: mongo-create-user.sh
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh","-c","./mongo-create-user.sh > user-creation.log"]
+          env:
+            - name: MONGO_DATA_DIR
+              value: /data/db
+            - name: MONGO_LOG_DIR
+              value: /dev/null
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "{{ .Values.mongoUserName }}"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "{{ .Values.mongoUserPassword }}"
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-mongo-persistent-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 50Gi
+---
+#Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-ember-ui"
+  labels:
+    app: "{{ .Release.Name }}-ember-ui"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "ember-ui"
+  annotations:
+    configmap.reloader.stakater.com/reload: "{{ .Release.Name }}-ember-configmap"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-ember-ui"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-ember-ui"
+        app.kubernetes.io/name: "{{ .Release.Name }}"
+    spec:
+      containers:
+        - name: "{{ .Release.Name }}-ember-ui"
+          image: "{{ .Values.image.ui.registry }}/{{ .Values.image.ui.repository }}:{{ .Values.image.ui.tag }}"
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: 2
+          env:
+            - name: REACT_APP_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: REACT_APP_SERVER_URL
+            - name: REACT_APP_CDSW_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: REACT_APP_CDSW_URL
+            - name: ENABLE_ADR
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: ENABLE_ADR
+---
+
