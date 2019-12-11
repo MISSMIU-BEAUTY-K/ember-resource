@@ -75,7 +75,7 @@ properties:
     type: string
     default: "true"
   reloader.serviceAccount.create:
-    type: string
+    type: boolean
     default: false
   reloader.serviceAccount.name:
     type: string
