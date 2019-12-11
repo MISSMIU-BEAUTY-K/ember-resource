@@ -18,9 +18,6 @@ properties:
           - type: ClusterRole
             rulesType: PREDEFINED
             rulesFromRoleName: cluster-admin
-  version:
-    type: string
-    default: $TAG
   apiImage:
     type: string
     default: $REGISTRY:$TAG
