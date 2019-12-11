@@ -13,7 +13,7 @@ metadata:
 spec:
   descriptor:
     type: Ember
-    version: {{ .Values.version | quote }}
+    version: {{ .Values.image.api.tag | quote }}
     description: |-
       Ember™, MetiStream's SaaS-based interactive healthcare analytics platform, uses advanced AI, Natural Language
       Processing (NLP), and machine learning to enrich and unify all healthcare data types, from clinical, claims, and
@@ -44,12 +44,12 @@ spec:
           name: "{{ .Release.Name }}-ember-configmap"
           key: "EMBER_UI_DEFAULT_HOST"
     - name: UI External URL
-        type: Reference
-        valueFrom:
-          type: ConfigMapKeyRef
-          configMapKeyRef:
-            name: "{{ .Release.Name }}-ember-configmap"
-            key: "EMBER_UI_EXTERNAL_HOST"
+      type: Reference
+      valueFrom:
+        type: ConfigMapKeyRef
+        configMapKeyRef:
+          name: "{{ .Release.Name }}-ember-configmap"
+          key: "EMBER_UI_EXTERNAL_HOST"
   componentKinds:
     - group: batch/v1
       kind: Job
