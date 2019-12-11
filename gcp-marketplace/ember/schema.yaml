@@ -15,9 +15,9 @@ properties:
       type: SERVICE_ACCOUNT
       serviceAccount:
         roles:
-        - type: ClusterRole
-          rulesType: PREDEFINED
-          rulesFromRoleName: cluster-admin
+          - type: ClusterRole
+            rulesType: PREDEFINED
+            rulesFromRoleName: cluster-admin
   version:
     type: string
     default: $TAG
@@ -74,8 +74,22 @@ properties:
   ifExternal:
     type: string
     default: "true"
+  reloader.serviceAccount.create:
+    type: string
+    default: false
+  reloader.serviceAccount.name:
+    type: string
+    x-google-marketplace:
+      type: SERVICE_ACCOUNT
+      serviceAccount:
+        roles:
+          - type: ClusterRole
+            rulesType: PREDEFINED
+            rulesFromRoleName: cluster-admin
 
 required:
   - name
   - namespace
-  - serviceAccount
+  - mongoUserName
+  - mongoUserPassword
+  - ifExternal
