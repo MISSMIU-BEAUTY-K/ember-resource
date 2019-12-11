@@ -46,4 +46,8 @@ elastic-stack:
             allow-origin: "*"
             allow-headers: "*"
 
+reloader:
+  serviceAccount:
+    create: false
+
 

@@ -3,6 +3,7 @@ applicationApiVersion: v1beta1
 properties:
   name:
     type: string
+    description: Give your deployement a name
     x-google-marketplace:
       type: NAME
   namespace:
@@ -11,6 +12,8 @@ properties:
       type: NAMESPACE
   serviceAccount:
     type: string
+    title: Service Account
+    description: A service account for Ember to manage other cluster components. (You can just let the cluster create one)
     x-google-marketplace:
       type: SERVICE_ACCOUNT
       serviceAccount:
@@ -65,17 +68,25 @@ properties:
   mongoUserName:
     type: string
     default: "root"
+    title: MongoDB User Name
+    description: User name to be used to secure the MongoDB database Ember uses to store metadata.
   mongoUserPassword:
     type: string
     default: "rootPass"
+    title: MongoDB Password
+    description: Password to be used to secure the MongoDB database Ember uses to store metadata.
   ifExternal:
     type: string
     default: "true"
-  reloader.serviceAccount.create:
-    type: boolean
-    default: false
+    title: Externally Expose the Deployment
+    description: Do you want to externally expose Ember? (Choose true if you don't have VPN setup)
+    enum:
+      - "true"
+      - "false"
   reloader.serviceAccount.name:
     type: string
+    title: Service Account for Reloader
+    description: This is another service account for Ember to use to manage the cluster.
     x-google-marketplace:
       type: SERVICE_ACCOUNT
       serviceAccount:
