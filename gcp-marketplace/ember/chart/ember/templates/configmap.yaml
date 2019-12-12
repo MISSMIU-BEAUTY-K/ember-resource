@@ -119,7 +119,7 @@ data:
     kubectl create configmap "${RELEASE_NAME}-ember-configmap" --from-literal=REACT_APP_CDSW_URL="${REACT_APP_CDSW_URL}" \
         --from-literal=ENABLE_ADR="${ENABLE_ADR}" --from-literal=EMBER_API_DEFAULT_HOST="${EMBER_API_DEFAULT_HOST}" \
         --from-literal=EMBER_UI_DEFAULT_HOST="${EMBER_UI_DEFAULT_HOST}" \
-        --from-literal=EMBER_UI_EXTERNAL_HOST="${EMBER_UI_EXTERNAL_HOST} --from-literal=EMBER_API_EXTERNAL_HOST="${EMBER_API_EXTERNAL_HOST}" \
+        --from-literal=EMBER_UI_EXTERNAL_HOST="${EMBER_UI_EXTERNAL_HOST}" --from-literal=EMBER_API_EXTERNAL_HOST="${EMBER_API_EXTERNAL_HOST}" \
         --from-literal=EMBER_API_DEFAULT_PORT="${EMBER_API_DEFAULT_PORT}" --from-literal=ELASTICSEARCH_DEFAULT_HOST="${ELASTICSEARCH_DEFAULT_HOST}" \
         --from-literal=ELASTICSEARCH_DEFAULT_PORT="${ELASTICSEARCH_DEFAULT_PORT}" --from-literal=KIBANA_DEFAULT_HOST="${KIBANA_DEFAULT_HOST}" \
         --from-literal=KIBANA_DEFAULT_PORT="${KIBANA_DEFAULT_PORT}" --from-literal=REACT_APP_SERVER_URL="${REACT_APP_SERVER_URL}" -o yaml --dry-run | kubectl replace -f -
