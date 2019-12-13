@@ -18,9 +18,9 @@ properties:
       type: SERVICE_ACCOUNT
       serviceAccount:
         roles:
-        - type: ClusterRole
-          rulesType: PREDEFINED
-          rulesFromRoleName: cluster-admin
+          - type: ClusterRole
+            rulesType: PREDEFINED
+            rulesFromRoleName: cluster-admin
   apiImage:
     type: string
     default: $REGISTRY:$TAG
@@ -101,3 +101,15 @@ required:
   - mongoUserName
   - mongoUserPassword
   - ifExternal
+
+x-google-marketplace:
+  clusterConstraints:
+    resources:
+      - replicas: 3
+        requests:
+          cpu: 8
+          memory: 32Gi
+        affinity:
+          simpleNodeAffinity:
+            type: REQUIRE_MINIMUM_NODE_COUNT
+            minimumNodeCount: 3
