@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{.Release.Name}}-kubeutil"
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-kubeutil"
+      labels:
+        app.kubernetes.io/name: "{{ .Release.Name }}"
+    spec:
+      volumes:
+        - name: "{{ .Release.Name }}-update-config"
+          configMap:
+            name: "{{ .Release.Name }}-update-config"
+            defaultMode: 0777
+      serviceAccount: {{ .Values.serviceAccount }}
+      restartPolicy: Never
+      containers:
+        - name: post-install-job
+          image: "{{ .Values.image.kubeutil.registry }}/{{ .Values.image.kubeutil.repository }}:{{ .Values.image.kubeutil.tag }}"
+          command: ["/bin/sh", "-c", "./updateConfig.sh"]
+          env:
+            - name: RELEASE_NAME
+              value: "{{ .Release.Name }}"
+            - name: SSL_MODE
+              value: "false"
+            - name: IF_EXTERNAL
+              value: "{{ .Values.ifExternal }}"
+          volumeMounts:
+            - name: "{{ .Release.Name }}-update-config"
+              mountPath: "updateConfig.sh"
+              subPath: "updateConfig.sh"

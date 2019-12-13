@@ -1,0 +1,9 @@
+actions:
+  - name: Say hello to Ember
+    bashTest:
+      script: curl -XGET ${APP_INSTANCE_NAME}-ember-api-service:9876/hello
+      expect:
+        stdout:
+          match: 'hello'
+        exitCode:
+          equals: 0

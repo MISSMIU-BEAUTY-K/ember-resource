@@ -1,0 +1,154 @@
+apiVersion: v1
+data:
+  mongo-create-user.sh: |
+    #!/bin/bash
+
+    checkIfInstalled=`dpkg-query -W -f='${binary:Package}' procps`
+
+    if [[ "$checkIfInstalled" == "procps" ]]; then
+      echo "procps is already installed"
+    else
+      echo "procps is not installed"
+      apt-get update && apt-get install procps -y
+    fi
+
+    mongo_running=$(pgrep mongod)
+
+    while [ -z "$mongo_running" ]
+    do
+            echo "Mongo is not running: $mongo_running"
+            echo "Waiting for mongo to run..."
+            sleep 10
+            mongo_running=$(pgrep mongod)
+    done
+
+    mongo_output=$(mongo -eval "db.getUsers().length" | grep -w "there are no users authenticated")
+
+    echo "Output is $mongo_output"
+
+    if [ -z "$mongo_output" ]
+    then
+            echo "Mongo has not yet been initialized. Initializing mongo......"
+            if [ -z "$MONGO_INITDB_ROOT_USERNAME" -o -z "$MONGO_INITDB_ROOT_PASSWORD" ]
+            then
+                    echo "MONGO_INITDB_ROOT_USERNAME or MONGO_INITDB_ROOT_PASSWORD was not provided. Exiting"
+                    exit 1
+            else
+                    (mongo admin --eval "db.createUser({user: \"$MONGO_INITDB_ROOT_USERNAME\",pwd: \"$MONGO_INITDB_ROOT_PASSWORD\",roles:[{role:'root',db: 'admin'}]})")
+            fi
+    else
+            echo "There are some existing users. Mongo has already been initialized."
+    fi
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-mongo-create-user
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "mongo"
+
+---
+apiVersion: v1
+data:
+  updateConfig.sh: |
+    #!/bin/bash
+
+    scheme="http"
+
+    if [ "$SSL_MODE" = true ]
+    then
+        echo "SSL mode enabled"
+        scheme="https"
+    fi
+
+    getIp () {
+        local IP="$(kubectl get services "$1" --output jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+        while [ -z "$IP" ]
+        do
+            sleep 10
+            IP="$(kubectl get services "$1" --output jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+        done
+        echo "$IP"
+    }
+
+    REACT_APP_CDSW_URL="http://cdsw.metistream.com"
+    ENABLE_ADR=false
+
+    echo "Getting IP for ember-api-service...."
+    if [ -n "$API_DNS_NAME" ]
+    then
+        EMBER_API_DEFAULT_HOST="$API_DNS_NAME"
+        EMBER_API_EXTERNAL_HOST="$API_DNS_NAME"
+    else
+        EMBER_API_DEFAULT_HOST=$(getIp "${RELEASE_NAME}-ember-api-service")
+        EMBER_API_EXTERNAL_HOST=$(getIp "${RELEASE_NAME}-ember-api-external-service")
+    fi
+
+    echo "Getting IP for ember-ui-service...."
+    if [ -n "$UI_DNS_NAME" ]
+    then
+        EMBER_UI_DEFAULT_HOST="$UI_DNS_NAME"
+        EMBER_API_EXTERNAL_HOST="$UI_DNS_NAME"
+    else
+        EMBER_UI_DEFAULT_HOST=$(getIp "${RELEASE_NAME}-ember-ui-service")
+        EMBER_UI_EXTERNAL_HOST=$(getIp "${RELEASE_NAME}-ember-ui-external-service")
+    fi
+
+    EMBER_API_DEFAULT_PORT="9876"
+    echo "Getting IP for elasticsearch-service...."
+    ELASTICSEARCH_DEFAULT_HOST=$(getIp "${RELEASE_NAME}-elasticsearch-service")
+    ELASTICSEARCH_DEFAULT_PORT="80"
+    echo "Getting IP for kibana-service...."
+    KIBANA_DEFAULT_HOST=$(getIp "${RELEASE_NAME}-kibana-service")
+    KIBANA_DEFAULT_PORT="80"
+
+
+    if [ "$IF_EXTERNAL" = "true" ]
+    then
+      REACT_APP_SERVER_URL="${scheme}://${EMBER_API_EXTERNAL_HOST}:${EMBER_API_DEFAULT_PORT}"
+      echo "Getting external IPs for Elasticsearch and Kibana"
+      ELASTICSEARCH_EXTERNAL_HOST=$(getIp "${RELEASE_NAME}-elasticsearch-external-service")
+      KIBANA_EXTERNAL_HOST=$(getIp "${RELEASE_NAME}-kibana-external-service")
+    else
+      REACT_APP_SERVER_URL="${scheme}://${EMBER_API_DEFAULT_HOST}:${EMBER_API_DEFAULT_PORT}"
+      ELASTICSEARCH_EXTERNAL_HOST="$ELASTICSEARCH_DEFAULT_HOST"
+      KIBANA_EXTERNAL_HOST="$KIBANA_DEFAULT_HOST"
+    fi
+
+    if [ "$SSL_MODE" = true ]
+    then
+        if [ -n "$API_DNS_NAME" -a -n "$UI_DNS_NAME" ]
+        then
+            echo "Deploying frontend against api DNS name: $API_DNS_NAME..."
+            REACT_APP_SERVER_URL="${scheme}://${$API_DNS_NAME}"
+        fi
+    fi
+
+    kubectl create configmap "${RELEASE_NAME}-ember-configmap" --from-literal=REACT_APP_CDSW_URL="${REACT_APP_CDSW_URL}" \
+        --from-literal=ENABLE_ADR="${ENABLE_ADR}" --from-literal=EMBER_API_DEFAULT_HOST="${EMBER_API_DEFAULT_HOST}" \
+        --from-literal=EMBER_UI_DEFAULT_HOST="${EMBER_UI_DEFAULT_HOST}" --from-literal=IF_EXTERNAL="${IF_EXTERNAL}" \
+        --from-literal=EMBER_UI_EXTERNAL_HOST="${EMBER_UI_EXTERNAL_HOST}" --from-literal=EMBER_API_EXTERNAL_HOST="${EMBER_API_EXTERNAL_HOST}" \
+        --from-literal=EMBER_API_DEFAULT_PORT="${EMBER_API_DEFAULT_PORT}" --from-literal=ELASTICSEARCH_DEFAULT_HOST="${ELASTICSEARCH_DEFAULT_HOST}" \
+        --from-literal=ELASTICSEARCH_DEFAULT_PORT="${ELASTICSEARCH_DEFAULT_PORT}" --from-literal=KIBANA_DEFAULT_HOST="${KIBANA_DEFAULT_HOST}" \
+        --from-literal=ELASTICSEARCH_EXTERNAL_HOST="${ELASTICSEARCH_EXTERNAL_HOST}" --from-literal=KIBANA_EXTERNAL_HOST="${KIBANA_EXTERNAL_HOST}" \
+        --from-literal=KIBANA_DEFAULT_PORT="${KIBANA_DEFAULT_PORT}" --from-literal=REACT_APP_SERVER_URL="${REACT_APP_SERVER_URL}" -o yaml --dry-run | kubectl replace -f -
+
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-update-config"
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+---
+apiVersion: v1
+data:
+  REACT_APP_CDSW_URL: "test"
+  ENABLE_ADR: "false"
+  EMBER_API_DEFAULT_HOST: "$api_dnsname"
+  EMBER_API_DEFAULT_PORT: "9876"
+  ELASTICSEARCH_DEFAULT_HOST: "test"
+  ELASTICSEARCH_DEFAULT_PORT: "80"
+  KIBANA_DEFAULT_HOST: "test"
+  KIBANA_DEFAULT_PORT: "80"
+  REACT_APP_SERVER_URL: "test"
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ember-configmap

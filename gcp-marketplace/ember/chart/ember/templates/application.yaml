@@ -1,0 +1,65 @@
+---
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: "{{ .Release.Name }}"
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    kubernetes-engine.cloud.google.com/icon: >-
+      data:image/png;base64,{{ .Files.Get "logo.png" | b64enc }}
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "click-to-deploy-containers", "product_id": "ember", "partner_name": "Google Click to Deploy"}'
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+spec:
+  descriptor:
+    type: Ember
+    version: {{ .Values.image.api.tag | quote }}
+    description: |-
+      Ember™, MetiStream's SaaS-based interactive healthcare analytics platform, uses advanced AI, Natural Language
+      Processing (NLP), and machine learning to enrich and unify all healthcare data types, from clinical, claims, and
+      genomics. With our AI-enabled case search, registry augmentation, and risk predictions, we can tap into that 80%
+      of unstructured data to boost quality and increase revenue.
+
+      # Support
+      Google does not offer support for this solution. However, community support is available on
+      [Stack Overflow](https://stackoverflow.com/questions/tagged/ember/).
+      Additional support is available on [MetiStream Support](https://metistream.com/support/).
+    maintainers:
+      - name: Google Click to Deploy
+        url: https://cloud.google.com/solutions/#click-to-deploy
+    links:
+      - description: 'User Guide: Google Click to Deploy Ember'
+        url: https://github.com/MetiStream/ember-resource/blob/gcp-marketplace/gcp-marketplace/ember/README.md
+      - description: 'Ember: Getting Started'
+        url: https://github.com/MetiStream/ember-resource/blob/gcp-marketplace/Ember-Tutorial.pdf
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ .Release.Name }}"
+  info:
+    - name: UI Internal URL
+      type: Reference
+      valueFrom:
+        type: ConfigMapKeyRef
+        configMapKeyRef:
+          name: "{{ .Release.Name }}-ember-configmap"
+          key: "EMBER_UI_DEFAULT_HOST"
+    - name: UI External URL
+      type: Reference
+      valueFrom:
+        type: ConfigMapKeyRef
+        configMapKeyRef:
+          name: "{{ .Release.Name }}-ember-configmap"
+          key: "EMBER_UI_EXTERNAL_HOST"
+  componentKinds:
+    - group: batch/v1
+      kind: Job
+    - group: v1
+      kind: ConfigMap
+    - group: v1
+      kind: Service
+    - group: apps/v1
+      kind: StatefulSet
+    - group: apps/v1
+      kind: Deployment
+    - group: autoscaling/v2beta1
+      kind: HorizontalPodAutoscaler
