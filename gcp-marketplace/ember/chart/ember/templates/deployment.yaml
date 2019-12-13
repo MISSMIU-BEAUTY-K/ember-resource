@@ -69,6 +69,21 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-ember-configmap"
                   key: KIBANA_DEFAULT_PORT
+            - name: ELASTICSEARCH_EXTERNAL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: ELASTICSEARCH_EXTERNAL_HOST
+            - name: KIBANA_EXTERNAL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: KIBANA_EXTERNAL_HOST
+            - name: IF_EXTERNAL
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-ember-configmap"
+                  key: IF_EXTERNAL
           readinessProbe:
             httpGet:
               path: /hello

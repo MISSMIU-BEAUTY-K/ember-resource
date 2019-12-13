@@ -100,11 +100,18 @@ data:
     echo "Getting IP for kibana-service...."
     KIBANA_DEFAULT_HOST=$(getIp "${RELEASE_NAME}-kibana-service")
     KIBANA_DEFAULT_PORT="80"
+
+
     if [ "$IF_EXTERNAL" = "true" ]
     then
       REACT_APP_SERVER_URL="${scheme}://${EMBER_API_EXTERNAL_HOST}:${EMBER_API_DEFAULT_PORT}"
+      echo "Getting external IPs for Elasticsearch and Kibana"
+      ELASTICSEARCH_EXTERNAL_HOST=$(getIp "${RELEASE_NAME}-elasticsearch-external-service")
+      KIBANA_EXTERNAL_HOST=$(getIp "${RELEASE_NAME}-kibana-external-service")
     else
       REACT_APP_SERVER_URL="${scheme}://${EMBER_API_DEFAULT_HOST}:${EMBER_API_DEFAULT_PORT}"
+      ELASTICSEARCH_EXTERNAL_HOST="$ELASTICSEARCH_DEFAULT_HOST"
+      KIBANA_EXTERNAL_HOST="$KIBANA_DEFAULT_HOST"
     fi
 
     if [ "$SSL_MODE" = true ]
@@ -118,10 +125,11 @@ data:
 
     kubectl create configmap "${RELEASE_NAME}-ember-configmap" --from-literal=REACT_APP_CDSW_URL="${REACT_APP_CDSW_URL}" \
         --from-literal=ENABLE_ADR="${ENABLE_ADR}" --from-literal=EMBER_API_DEFAULT_HOST="${EMBER_API_DEFAULT_HOST}" \
-        --from-literal=EMBER_UI_DEFAULT_HOST="${EMBER_UI_DEFAULT_HOST}" \
+        --from-literal=EMBER_UI_DEFAULT_HOST="${EMBER_UI_DEFAULT_HOST}" --from-literal=IF_EXTERNAL="${IF_EXTERNAL}" \
         --from-literal=EMBER_UI_EXTERNAL_HOST="${EMBER_UI_EXTERNAL_HOST}" --from-literal=EMBER_API_EXTERNAL_HOST="${EMBER_API_EXTERNAL_HOST}" \
         --from-literal=EMBER_API_DEFAULT_PORT="${EMBER_API_DEFAULT_PORT}" --from-literal=ELASTICSEARCH_DEFAULT_HOST="${ELASTICSEARCH_DEFAULT_HOST}" \
         --from-literal=ELASTICSEARCH_DEFAULT_PORT="${ELASTICSEARCH_DEFAULT_PORT}" --from-literal=KIBANA_DEFAULT_HOST="${KIBANA_DEFAULT_HOST}" \
+        --from-literal=ELASTICSEARCH_EXTERNAL_HOST="${ELASTICSEARCH_EXTERNAL_HOST}" --from-literal=KIBANA_EXTERNAL_HOST="${KIBANA_EXTERNAL_HOST}" \
         --from-literal=KIBANA_DEFAULT_PORT="${KIBANA_DEFAULT_PORT}" --from-literal=REACT_APP_SERVER_URL="${REACT_APP_SERVER_URL}" -o yaml --dry-run | kubectl replace -f -
 
 kind: ConfigMap

@@ -152,3 +152,40 @@ spec:
   selector:
     app: "{{ .Release.Name }}-ember-ui"
   type: LoadBalancer
+
+---
+# Elasticsearch external service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-elasticsearch-external-service"
+  labels:
+    service: "{{ .Release.Name }}-elasticsearch-external-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "elasticsearch"
+spec:
+  ports:
+    - name: elasticsearch-external-port
+      port: 80
+      targetPort: 9200
+  selector:
+    app: elasticsearch
+  type: LoadBalancer
+---
+# Kibana external service
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-kibana-external-service"
+  labels:
+    service: "{{ .Release.Name }}-kibana-external-service"
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: "kibana"
+spec:
+  ports:
+    - name: kibana-external-port
+      port: 80
+      targetPort: 5601
+  selector:
+    app: kibana
+  type: LoadBalancer

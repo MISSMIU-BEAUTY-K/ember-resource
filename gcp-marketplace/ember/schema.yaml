@@ -18,9 +18,9 @@ properties:
       type: SERVICE_ACCOUNT
       serviceAccount:
         roles:
-          - type: ClusterRole
-            rulesType: PREDEFINED
-            rulesFromRoleName: cluster-admin
+        - type: ClusterRole
+          rulesType: PREDEFINED
+          rulesFromRoleName: cluster-admin
   apiImage:
     type: string
     default: $REGISTRY:$TAG
