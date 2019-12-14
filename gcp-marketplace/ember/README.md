@@ -46,7 +46,7 @@ Create a new cluster from the command line:
 export CLUSTER=ember-cluster
 export ZONE=us-east1-b
 
-gcloud container clusters create "${CLUSTER}" --zone "${ZONE}"
+gcloud container clusters create "${CLUSTER}" --zone "${ZONE}" --num-nodes 1 --enable-autoscaling --min-nodes 1 --max-nodes 10 --machine-type=custom-8-32768
 ```
 
 Configure `kubectl` to connect to the new cluster.
@@ -141,15 +141,26 @@ kubectl apply -f "${RELEASE_NAME}_sa_manifest.yaml" \
 
 #### Expand the manifest template
 
+First, add an addtional repo Ember uses as a dependency.
+
+```shell
+helm repo add stakater https://stakater.github.io/stakater-charts
+```
+
+Then, update helm repo.
+
+```shell
+helm repo update
+```
+
 Use `helm template` to expand the template. We recommend that you save the
 expanded manifest file for future updates to the application.
+
 
 ```shell
 helm template chart/ember \
   --name ${RELEASE_NAME} \
-  --namespace=${NAMESPACE} \
-  --set serviceAccount=${EMBER_ACCOUNT} \
-  --set version=${TAG} \
+  --namespace ${NAMESPACE} \
   > ${RELEASE_NAME}_manifest.yaml
 ```
 
