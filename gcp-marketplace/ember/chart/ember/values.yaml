@@ -49,5 +49,7 @@ elastic-stack:
 reloader:
   serviceAccount:
     create: false
+  rbac:
+    enabled: false
 
 
