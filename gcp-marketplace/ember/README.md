@@ -30,7 +30,7 @@ environment by default.
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 - [docker](https://docs.docker.com/install/)
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [helm](https://helm.sh/)
+- [helm](https://v2.helm.sh/) The instruction is based on helm 2.x. To install helm 2, please refer to [helm installation](https://v2.helm.sh/docs/using_helm/#installing-the-helm-client)
 
 Configure `gcloud` as a Docker credential helper:
 
