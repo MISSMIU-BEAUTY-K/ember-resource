@@ -157,10 +157,28 @@ helm dep update chart/ember
 Use `helm template` to expand the template. We recommend that you save the
 expanded manifest file for future updates to the application.
 
-
+For helm 2.x version, run
 ```shell
 helm template chart/ember \
   --name ${RELEASE_NAME} \
+  --namespace ${NAMESPACE} \
+  --set serviceAccount=${EMBER_ACCOUNT} \
+  --set version=${TAG} \
+  --set image.api.repository=${REPO} \
+  --set image.ui.repository="${REPO}/ember-ui" \
+  --set image.engine.repository="${REPO}/ember-engine" \
+  --set image.kubeutil.repository="${REPO}/kubeutil" \
+  --set image.api.tag=${TAG} \
+  --set image.ui.tag=${TAG} \
+  --set image.engine.tag=${TAG} \
+  --set image.kubeutil.tag=${TAG} \
+  --set ifExternal="true" \
+  > ${RELEASE_NAME}_manifest.yaml
+```
+
+For helm 3.x version, run
+```shell
+helm template ${RELEASE_NAME} chart/ember \
   --namespace ${NAMESPACE} \
   --set serviceAccount=${EMBER_ACCOUNT} \
   --set version=${TAG} \
@@ -198,7 +216,7 @@ To view the app, open the URL in your browser.
 Get the IP of Ember UI service by running
 
 ```shell
-kubectl --namespace "${NAMESPACE}" get services "${APP_INSTANCE_NAME}-ember-ui-service" --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
+kubectl --namespace "${NAMESPACE}" get services "${RELEASE_NAME}-ember-ui-service" --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 You may need to wait for a while before an ip gets assigned.
 Use the external IP of the Ember UI service to access Ember
@@ -218,13 +236,13 @@ Backup Ember using the following command:
 
 ```shell
 export NAMESPACE=default
-./backup.sh $APP_INSTANCE_NAME $NAMESPACE [BACKUP_FOLDER] [MONGODB_USERNAME] [MONGODB_PASSWORD]
+./backup.sh $RELEASE_NAME $NAMESPACE [BACKUP_FOLDER] [MONGODB_USERNAME] [MONGODB_PASSWORD]
 ```
 
 ## Restore Ember configuration
 
 ```shell
-./restore.sh $APP_INSTANCE_NAME $NAMESPACE [BACKUP_FOLDER] [MONGODB_USERNAME] [MONGODB_PASSWORD]
+./restore.sh $RELEASE_NAME $NAMESPACE [BACKUP_FOLDER] [MONGODB_USERNAME] [MONGODB_PASSWORD]
 ```
 
 # Upgrading the app
@@ -232,12 +250,12 @@ export NAMESPACE=default
 The Ember Deployments is configured to roll out updates automatically. Start the update by patching the Deployment with a new image reference:
 
 ```shell
-kubectl set image deployment ${APP_INSTANCE_NAME}-ember-api --namespace ${NAMESPACE} \
-  "${APP_INSTANCE_NAME}-ember-api=[NEW_EMBER_API_IMAGE_REFERENCE]"
-kubectl set image deployment ${APP_INSTANCE_NAME}-ember-ui --namespace ${NAMESPACE} \
-  "${APP_INSTANCE_NAME}-ember-ui=[NEW_EMBER_UI_IMAGE_REFERENCE]"
-kubectl set image deployment ${APP_INSTANCE_NAME}-ember-engine --namespace ${NAMESPACE} \
-"${APP_INSTANCE_NAME}-ember-engine=[NEW_EMBER_ENGINE_IMAGE_REFERENCE]"
+kubectl set image deployment ${RELEASE_NAME}-ember-api --namespace ${NAMESPACE} \
+  "${RELEASE_NAME}-ember-api=[NEW_EMBER_API_IMAGE_REFERENCE]"
+kubectl set image deployment ${RELEASE_NAME}-ember-ui --namespace ${NAMESPACE} \
+  "${RELEASE_NAME}-ember-ui=[NEW_EMBER_UI_IMAGE_REFERENCE]"
+kubectl set image deployment ${RELEASE_NAME}-ember-engine --namespace ${NAMESPACE} \
+"${RELEASE_NAME}-ember-engine=[NEW_EMBER_ENGINE_IMAGE_REFERENCE]"
 ```
 
 Where `[NEW_EMBER_API_IMAGE_REFERENCE]` and `[NEW_EMBER_UI_IMAGE_REFERENCE]` and `[NEW_EMBER_ENGINE_IMAGE_REFERENCE]` are the Docker image references of the new images that you want to use.
@@ -246,7 +264,7 @@ To check the status of Pods, and the progress of
 the new image, run the following command:
 
 ```shell
-kubectl get pods --selector app.kubernetes.io/name=${APP_INSTANCE_NAME} \
+kubectl get pods --selector app.kubernetes.io/name=${RELEASE_NAME} \
   --namespace ${NAMESPACE}
 ```
 
@@ -266,7 +284,7 @@ kubectl get pods --selector app.kubernetes.io/name=${APP_INSTANCE_NAME} \
 Set your installation name and Kubernetes namespace:
 
 ```shell
-export APP_INSTANCE_NAME=ember
+export RELEASE_NAME=ember
 export NAMESPACE=default
 ```
 
@@ -281,7 +299,7 @@ installation.
 Run `kubectl` on the expanded manifest file:
 
 ```shell
-kubectl delete -f ${APP_INSTANCE_NAME}_manifest.yaml --namespace ${NAMESPACE}
+kubectl delete -f ${RELEASE_NAME}_manifest.yaml --namespace ${NAMESPACE}
 ```
 
 Otherwise, delete the resources using types and a label:
@@ -289,7 +307,7 @@ Otherwise, delete the resources using types and a label:
 ```shell
 kubectl delete application \
   --namespace ${NAMESPACE} \
-  --selector app.kubernetes.io/name=${APP_INSTANCE_NAME}
+  --selector app.kubernetes.io/name=${RELEASE_NAME}
 ```
 
 > **NOTE:** It will delete only the ember application. All ember managed resources will be available.
