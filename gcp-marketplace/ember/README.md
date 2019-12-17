@@ -178,7 +178,7 @@ helm template chart/ember \
 
 For helm 3.x version, run
 ```shell
-helm template chart/ember \
+helm template ${RELEASE_NAME} chart/ember \
   --namespace ${NAMESPACE} \
   --set serviceAccount=${EMBER_ACCOUNT} \
   --set version=${TAG} \
